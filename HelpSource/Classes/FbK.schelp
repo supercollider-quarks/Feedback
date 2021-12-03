@@ -1,0 +1,78 @@
+TITLE:: FbK
+summary::  a painless way to create a feedback loop within a SynthDef, at control rate.
+categories:: UGens>Feedback
+related:: Classes/Feedback, Classes/FbNode, Classes/Fb, Classes/FbL,  Classes/FbC
+
+
+
+
+
+DESCRIPTION::
+
+FbK is quite similar to Fb, except that it works for control-rate signals instead of audio-rate ones. It also doesn't have the additional delay line feature that Fb has. The best way to think of it is as a way to iterate difference equations at control-rate.
+
+
+
+See also: link::Classes/FbNode::, link::Classes/FbL::, link::Classes/FbC::, link::Classes/LocalIn::, link::Classes/InFeedback::, link::Classes/NodeProxy::, link::Classes/LocalBuf::, and also the single sample feedback file in the Examples folder that comes with SC.
+
+
+CLASSMETHODS::
+
+METHOD:: new
+		Create a feedback loop within a SynthDef
+ARGUMENT:: func
+		This function should contain the UGens that will be inside the feedback loop.  Its output should be a control-rate UGen or an array of control-rate UGens. This is delayed by one control period and then fed into the function's input.
+
+ARGUMENT::initVals
+		The initial values that the function's arguments will have on the first iteration. If this argument is supplied, its size will determine the number of feedback channels. If FbK will try to guess the number of channels from its func parameter, and they will all have initial values of zero. If in doubt, supply this parameter.
+
+
+
+
+
+EXAMPLES::
+
+code::
+
+(
+
+// A sine-wave LFO, implemented similarly to SinOscFB
+// (of course it would be better to use SinOsc.kr - this is just for demonstration purposes)
+
+	play {
+		var lfo;
+		var x = SinOsc.kr(0.02).exprange(0.01,0.1); // related to the lfo rate
+		lfo = FbK({
+			arg fb;
+			fb[0] = fb[0] +	(x*fb[1]);
+			fb[1] = fb[1] -	(x*fb[0]);
+			fb
+		}, [0,1]);
+
+		SinOsc.ar(lfo[0].linexp(0,1,100,400))!2;
+	}
+
+)
+
+
+
+
+
+(
+
+// you can use control-rate UGens inside the update function
+
+	play {
+		var lfo;
+		lfo = FbK({
+			arg fb;
+			SinOsc.kr(1,fb*2);
+		}, [0]).poll;
+
+		SinOsc.ar(lfo.linexp(0,1,100,400))!2;
+	}
+
+)
+
+
+::
