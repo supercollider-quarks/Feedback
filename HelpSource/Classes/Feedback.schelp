@@ -1,0 +1,29 @@
+TITLE:: Feedback
+summary:: a quark for implementing feedback loops painlessly
+categories:: UGens>Feedback
+related:: Classes/FbNode, Classes/Fb, Classes/FbL, Classes/FbC, Classes/FbK
+
+
+
+
+
+
+
+DESCRIPTION::
+
+
+
+The Feedback quark provides a small collection of classes aimed at making it easier to create feedback loops within a SynthDef. These classes are particularly useful if you want to implement a complicated network of many feedbacks.  The classes provided are
+
+
+
+link::Classes/FbNode:: - this is probably the best place for new users to start. It provides a way to read from and write to a feedback bus, similarly to LocalIn and LocalOut. The big difference is that you can have many FbNodes in a single SynthDef, and they can all feed back into each other if you want. In addition, FbNode makes it easy to implement feedback delay lines, by adding an optional modulateable multi-tap delay to every FbNode.
+
+
+
+link::Classes/Fb:: (and its interpolating versions
+link::Classes/FbL:: and link::Classes/FbC::) - this does the same sort of thing as link::Classes/FbNode::, but with a different interface. With Fb, you supply a function, whose output is delayed (by an amount you specify) and then fed back into its input. You can have many such feedback functions within a single SynthDef, and they can even be nested. Fb is the class to use if you're thinking in terms of feedback loops, whereas FbNode is better if you're thinking in terms of feedback delay lines.
+
+
+
+link::Classes/FbK:: - this is similar to Fb, except that it operates on control-rate (kr) signals instead of audio rate ones, and doesn't have an extra delay line. It can be used to iterate equations at control rate.

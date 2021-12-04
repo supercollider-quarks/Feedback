@@ -1,0 +1,20 @@
+TITLE:: FbC
+summary::  a painless way to create a feedback loop within a SynthDef.
+categories:: UGens>Feedback
+related:: Classes/Feedback, Classes/FbNode, Classes/Fb, Classes/FbL,  Classes/FbK
+
+
+
+
+
+
+
+DESCRIPTION::
+
+
+
+FbC is a cubically interpolating version of Fb, which is a convenience class that allows you to create feedback loops within a SynthDef in as painless a way as possible.
+
+
+
+See link::Classes/Fb:: for discussion, usage and examples.

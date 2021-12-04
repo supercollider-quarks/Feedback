@@ -1,0 +1,159 @@
+TITLE:: Fb
+summary::  a painless way to create a feedback loop within a SynthDef
+categories:: UGens>Feedback
+related:: Classes/Feedback, Classes/FbNode, Classes/FbL, Classes/FbC, Classes/FbK
+
+
+
+
+
+DESCRIPTION::
+There are many ways to create feedback loops in SuperCollider.  Fb is a convenience class that allows you to create them in as painless a way as possible.  It achieves this by using LocalBuf internally.  The easiest way to understand it is probably to skip to the examples section. Fb is part of the Feedback quark.
+
+In addition to Fb, the Feedback quark provides FbNode, which is a different way
+of doing the same thing. FbNode is more flexible and arguably more intuitive
+than Fb. See its help file for a comparison between the two classes.  There is
+also link::Classes/FbK::, which is like Fb but for control-rate (kr) signals.
+
+Ways of creating feedback loops in SuperCollider can be divided into two types: those that use busses to route signals between SynthDefs, and those that create a feedback loop within a SynthDef.  Fb is of the latter type.
+
+
+The traditional way to create feedback within a SynthDef is to use LocalIn/LocalOut.  Fb has several advantages over this:
+
+list::
+ ##You can have more than one instance of Fb in a single SynthDef -- either sequentially or nested inside each other -- allowing greater readability of code and more complex networks of feedback loops than would be practical with LocalIn/LocalOut.
+
+
+ ##Fb does multichannel expansion in most cases, so you don't have to worry so much about how many channels to use
+
+
+ ##Fb will not crash the server if you send it the wrong number of channels
+::
+
+Fb has a built-in delay line, so you can control the time period of the feedback loop.  As with (almost) all methods of achieving feedback in SuperCollider, the minimum delay is given by the server's block size, which is usually 64 samples.  Fb's inbuilt delay line does not interpolate (i.e. it uses DelayN), but its sister classes FbL and FbC use linear and cubic interpolation.
+
+
+
+See also: link::Classes/FbNode::, link::Classes/FbL::, link::Classes/FbC::, link::Classes/LocalIn::, link::Classes/InFeedback::, link::Classes/NodeProxy::, link::Classes/LocalBuf::, and also the single sample feedback file in the Examples folder that comes with SC.
+
+
+CLASSMETHODS::
+
+METHOD:: new
+		Create a feedback loop within a SynthDef
+ARGUMENT:: func
+		This function should contain the UGens that will be inside the feedback loop.  Its output is delayed and then fed into its input.
+
+ARGUMENT:: maxdelaytime
+		The maximum delay time in seconds. used to initialize the delay buffer size.  You do not need to subtract ControlDur.ir from this, as it is done automatically.  If you set it to less than  ControlDur.ir (i.e. less than 64/44100 ≈ 0.014s) then no extra delay line will be added.
+
+ARGUMENT::delaytime
+		Delay time in seconds.  If not set, this defaults to maxdelaytime.
+
+ARGUMENT::numChannels
+	  How many channels of audio to be fed back.  If this is not set, Fb will make a guess by sending func a mono signal and seeing how many channels it returns.  This is a good guess in a lot of cases, but if you're doing something complicated with lots of multichannel expansion it's worth setting this expicitly.
+
+
+
+
+
+
+
+
+
+
+EXAMPLES::
+
+
+Note that some of these examples use FbL for linear interpolation.
+
+
+code::
+// simple dub delay effect
+
+
+
+b = Buffer.read(s,Platform.resourceDir +/+ "sounds/a11wlk01.wav")
+
+
+(
+
+	{
+		var in = PlayBuf.ar(1,b);
+		var out = in + Fb({
+			arg feedback; // this will contain the delayed output from the Fb unit
+			// filter and distort the feedback signal.
+			// Note that the input signal is fed in here as well:
+			BPF.ar(feedback*0.8 + in, 2000, 3.8).distort;
+			// for fun effects, try changing the 0.8 to something greater than one
+		},0.6);
+		DetectSilence.ar(out,doneAction:2);
+		out!2;
+	}.play;
+
+)
+
+
+
+b.free
+
+
+
+// Karplus-Strong style plucked string algorithm (see also Pluck)
+
+(
+
+	{
+
+		var sig = Impulse.ar(0)!2; // stereo input - feedback will expand to two channels
+		var freq = 200;
+		sig = FbL({arg fb; LPF.ar(LeakDC.ar(fb),8000)*0.99+sig;},1/freq);
+		DetectSilence.ar(sig,doneAction:2);
+		sig;
+	}.play
+
+)
+
+
+
+// Multiple instances in one SynthDef: three Karplus-Strong style algorithms in a row
+
+(
+
+	{
+		var sig = Impulse.ar(0);
+		sig = FbL({arg fb; LPF.ar(LeakDC.ar(fb),8000)*0.99+sig;},1/300);
+		sig = FbL({arg fb; LPF.ar(LeakDC.ar(fb),8000)*0.99+sig;},1/400);
+		sig = FbL({arg fb; LPF.ar(LeakDC.ar(fb),8000)*0.99+sig;},1/500);
+		DetectSilence.ar(sig,doneAction:2);
+		sig!2;
+	}.play
+
+)
+
+
+
+// You can nest feedback loops inside each other
+
+(
+
+	{
+
+		var sig = Decay.kr(Impulse.kr(1/2),0.6)*PinkNoise.ar(1!2);
+
+		sig = FbL({
+			arg fb1;
+			sig = sig + FbL({
+				arg fb2;
+				(OnePole.ar(LeakDC.ar(0-fb2),0.2)*0.99*1)+(fb1*9) / 10;
+			},1/250);
+			OnePole.ar(sig,-0.01);
+		},0.1);
+
+		sig;
+	}.play;
+
+)
+
+
+::
